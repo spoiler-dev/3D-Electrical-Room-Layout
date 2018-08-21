@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>电气室规划图</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="./css/index.css" />
+</head>
+
+<body>
+    <!-- 平面设计模块 -->
+    <div class="both-content" id="flat">
+        <!-- 侧边栏 -->
+        <div class="left-dashboard">
+            <!-- 机器类型选择 -->
+            <nav class="left-nav">
+                <!-- 机柜和空调 -->
+                <div class="nav-list">
+                    <div class="nav-label">选择机柜或空调</div>
+                    <div class="nav-zone">
+                        <div class="nav-box">
+                            <p class="nav-box-title">机柜</p>
+                            <div class="nav-box-machine drag" type="machine">
+                                <img src="./img/machine.png" class="drag-img" id="drag-machine">
+                            </div>
+                        </div>
+                        <div class="nav-box">
+                            <p class="nav-box-title">空调</p>
+                            <div class="nav-box-machine drag" type="air">
+                                <img src="./img/air.png" class="drag-img" id="drag-air">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 烟感、温感、控制器 -->
+                <div class="nav-list">
+                    <div class="nav-label">选择设备</div>
+                    <div class="equip-box">
+                        <div class="equip-title">烟感</div>
+                        <div class="equip-moudle drag" type="smoke">
+                            <img src="./img/smoke.png">
+                        </div>
+                    </div>
+                    <div class="equip-box">
+                        <div class="equip-title">温感</div>
+                        <div class="equip-moudle drag" type="temperature">
+                            <img src="./img/temperature.png">
+                        </div>
+                    </div>
+                    <div class="equip-box">
+                        <div class="equip-title">控制器</div>
+                        <div class="equip-moudle drag" type="control">
+                            <img src="./img/control.png">
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <!-- 右侧模块 -->
+        <div class="right-dashboard">
+            <div class="right-dashboard-top">
+                <!-- 创建电气室 -->
+                <div class="create-axis">
+                    <span class="axis-label"> W：</span>
+                    <input type="text" id="grid-width" class="coordinate-input">
+                    <img class="item-link" src="./img/link.png">
+                    <span class="axis-label"> H：</span>
+                    <input type="text" id="grid-length" class="coordinate-input">
+                    <button id="create-button" class="create-button">创建网格</button>
+                    <button id="submit-button" class="create-button">提交</button>
+                </div>
+            </div>
+            <div class="right-dashboard-bottom" id="right-dashboard-bottom">
+                <div class="axis-orign"></div>
+                <!-- 标尺 -->
+                <div id="axis-x"></div>
+                <div id="axis-y"></div>
+                <!-- 画布 -->
+                <div class="painting" id="painting"></div>
+            </div>
+        </div>
+    </div>
+    <!-- 3D预览模块 -->
+    <div id="three-dimensional">
+    </div>
+    <!-- 2D 3D 切换按钮组 -->
+    <div id="fixed-btn">
+        <button id="tab1-button" class="tab1-button tab2-style">2D预览</button>
+        <button id="tab2-button" class="tab2-button tab1-style">3D预览</button>
+    </div>
+    <!-- 面板控件 -->
+    <div id="fixed-panel">
+        <ul>
+            <li>
+                <div id="panel-title"></div>
+            </li>
+            <li class="item-li1">
+                <div class="item-title">名称</div>
+            </li>
+            <li class="item-li2">
+                <div class="item-info">
+                    <input id="machineName" class="item-input" type="text" placeholder="请输入名称">
+                </div>
+            </li>
+            <li class="item-li1">
+                <div class="item-title">位置</div>
+            </li>
+            <li class="item-li2">
+                <div class="item-info info-axis">
+                    <span class="item-axis">X:</span>
+                    <input id="machineAxis-x" class="item-input-num" type="text">
+                    <img class="item-link" src="./img/link.png">
+                    <span class="item-axis">Y:</span>
+                    <input id="machineAxis-y" class="item-input-num" type="text">
+                </div>
+            </li>
+            <li class="item-li3">
+                <button class="item-btn" id="item-btn">确认</button>
+            </li>
+        </ul>
+    </div>
+    <script src="./js/libs/three.min.js"></script>
+    <script src="./js/libs/OrbitControls.js"></script>
+    <script src="./js/libs/ThreeBSP.js"></script>
+    <script src="./js/utils.js"></script>
+    <script type="text/javascript">
+        // 生成标尺
+        var xRuler = document.getElementById('axis-x');
+        var yRuler = document.getElementById('axis-y');
+        var scale;
+        // x-标尺
+        var xLength = parseInt(xRuler.offsetWidth / 10);
+        for (var i = 1; i < xLength; i++) {
+            // 5px
+            if (i % 5 == 0 && i % 2 != 0) {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'x-minor');
+                scale.style.left = i * 10 + "px";
+                xRuler.appendChild(scale);
+            }
+            // 10px
+            else if (i % 10 == 0) {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'x-major');
+                scale.style.left = i * 10 + "px";
+                scale.innerText = i * 10 - 100;
+                xRuler.appendChild(scale);
+            // 1px
+            } else {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'x-micro');
+                scale.style.left = i * 10 + "px";
+                xRuler.appendChild(scale);
+            }
+        }
+        // y-标尺 
+        var yLength = parseInt(yRuler.offsetHeight / 10);
+        for (var i = 1; i < yLength; i++) {
+            // 5px
+            if (i % 5 == 0 && i % 2 != 0) {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'y-minor');
+                scale.style.top = i * 10 + "px";
+                yRuler.appendChild(scale);
+            }
+            // 10px            
+            else if (i % 10 == 0) {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'y-major');
+                scale.style.top = i * 10 + "px";
+                scale.innerText = i * 10 - 100;
+                yRuler.appendChild(scale);
+            }
+            // 1px            
+            else {
+                scale = document.createElement('div');
+                scale.setAttribute('class', 'y-micro');
+                scale.style.top = i * 10 + "px";
+                yRuler.appendChild(scale);
+            }
+        }
+
+        // 电气室的高度/宽度
+        var gridLength;
+        var gridWidth;
+        // 创建电气室
+        var createGrid = document.getElementById('create-button');
+        createGrid.addEventListener('click', function () {
+            // 判断长宽是否存在
+            if (gridLength != '' && gridWidth != '') {
+                // 获取输入框内的长宽
+                gridLength = document.getElementById('grid-length').value;
+                gridWidth = document.getElementById('grid-width').value;
+                // 画布
+                var right = document.getElementById('painting');
+                var houseHtml = '<div id="love-house"></div>';
+                right.innerHTML = houseHtml;
+                // 电气室
+                var house = document.getElementById('love-house');
+                house.style.width = gridWidth + "px";
+                house.style.height = gridLength + "px";
+            }
+        })
+        
+        // 赋予拖拽能力
+        var oDrag = document.getElementsByClassName('drag');
+        for (var i = 0; i < oDrag.length; i++) {
+            drag(oDrag[i]);
+        }
+        // 储存当前拖拽体
+        var ontology;
+        // 悬浮层级
+        var zIndex1 = 10;
+        var zIndex2 = 50;
+        // 拖拽模块
+        function drag(oDrag) {
+            var disX =0;
+            var disY = 0;
+            var iL = 0;
+            var iT = 0;
+            // 机柜
+            var machineHtml = '<div class="machine"> \
+                                    <div class="machine-center"> \
+                                        <div class="machine-position"></div> \
+                                    </div> \
+                                </div> \
+                                <div class="machine-title"> \
+                                    <div class="machine-title-input"></div> \
+                            </div>';
+            // 空调                    
+            var airHtml = '<div class="machine"> \
+                                <div class="air-center"> \
+                                    <div class="air-position"></div> \
+                                </div> \
+                            </div> \
+                            <div class="machine-title"> \
+                                <div class="machine-title-input"></div> \
+                        </div> ';
+            // 烟感
+            var smokeHtml = '<img src="./img/smoke.png" width="100%">';
+            // 温感
+            var temperatureHtml = '<img src="./img/temperature.png" width="100%">';
+            // 控制器
+            var controlHtml = '<img src="./img/control.png" width="100%">';
+            // 实际拖拽体
+            var oTemp;
+            // 翻转体
+            var rotate;
+            
+            // 鼠标点击
+            oDrag.onmousedown = function (event) {
+                // 电气室若未创建则拖拽无效
+                var house = document.getElementById('love-house');
+                if (!house) {
+                    return false;
+                }
+                var event = event || window.event;
+                // 获取要拖拽div的对应类型
+                var type = this.getAttribute('type');
+                oTemp = document.createElement("div");
+                oTemp.setAttribute("name", "");
+                oTemp.setAttribute("axis", "");
+                // 机柜拖拽
+                if (type == 'machine') {
+                    // 添加多个类名
+                    oTemp.classList.add("machine-zone", "machine-line","dragDel");
+                    oTemp.setAttribute("type", "outer");
+                    oTemp.innerHTML = machineHtml;
+                    oTemp.style.zIndex = zIndex1;
+                    // 旋转动画
+                    rotate = document.getElementById('drag-machine');
+                    rotate.style.transform = "rotateX(90deg)";
+                    rotate.src = './img/machine-top.png';
+                    rotate.style.width = 84 + 'px';
+                    rotate.style.height = 84 + 'px';
+                    rotate.style.marginTop = 50 + 'px';
+                    rotate.style.transform = "rotateX(180deg)";
+                }
+                // 空调拖拽
+                else if (type == "air") {
+                    oTemp.classList.add("machine-zone", "air-line","dragDel");
+                    oTemp.setAttribute("type", "outer");
+                    oTemp.innerHTML = airHtml;
+                    oTemp.style.zIndex = zIndex1;
+                    // 旋转动画
+                    rotate = document.getElementById('drag-air');
+                    rotate.style.transform = "rotateX(90deg)";
+                    rotate.src = './img/air-top.png';
+                    rotate.style.width = 84 + 'px';
+                    rotate.style.height = 84 + 'px';
+                    rotate.style.marginTop = 50 + 'px';
+                    rotate.style.transform = "rotateX(180deg)";
+                } else if (type == "smoke") {
+                    oTemp.classList.add("img-zone", "smoke-line","dragDel");
+                    oTemp.setAttribute("type", "inner");
+                    oTemp.innerHTML = smokeHtml;
+                    oTemp.style.zIndex = zIndex2;
+                } else if (type == "temperature") {
+                    oTemp.classList.add("img-zone", "temperature-line","dragDel");
+                    oTemp.setAttribute("type", "inner");
+                    oTemp.innerHTML = temperatureHtml;
+                    oTemp.style.zIndex = zIndex2;
+                } else if (type == "control") {
+                    oTemp.classList.add("img-zone", "control-line","dragDel");
+                    oTemp.setAttribute("type", "inner");
+                    oTemp.innerHTML = controlHtml;
+                    oTemp.style.zIndex = zIndex2;
+                } else {
+                    console.log("类型错误");
+                }
+                // 设置 position 的 top left属性
+                oTemp.style.left = this.currentStyle ? this.currentStyle["left"] : getComputedStyle(this, null)["left"];
+                oTemp.style.top = this.currentStyle ? this.currentStyle["top"] : getComputedStyle(this, null)["top"];
+                // 追加拖拽体到页面
+                document.body.appendChild(oTemp);
+                // 创建x-min辅助线
+                var xline1 = document.createElement('div');
+                xline1['id'] = 'sup-xline1';
+                xline1.style.left = this.currentStyle ? this.currentStyle["left"] : getComputedStyle(this, null)["left"];
+                xline1.style.top = this.currentStyle ? this.currentStyle["top"] : getComputedStyle(this, null)["top"];
+                document.body.appendChild(xline1);
+                // 创建x-max辅助线
+                var xline2 = document.createElement('div');
+                xline2['id'] = 'sup-xline2';
+                xline2.style.left = this.currentStyle ? this.currentStyle["left"] : getComputedStyle(this, null)["left"];
+                xline2.style.top = this.currentStyle ? this.currentStyle["top"] : getComputedStyle(this, null)["top"];
+                document.body.appendChild(xline2);
+                // 创建y-min辅助线
+                var yline1 = document.createElement('div');
+                yline1['id'] = 'sup-yline1';
+                yline1.style.left = this.currentStyle ? this.currentStyle["left"] : getComputedStyle(this, null)["left"];
+                yline1.style.top = this.currentStyle ? this.currentStyle["top"] : getComputedStyle(this, null)["top"];
+                document.body.appendChild(yline1);
+                // 创建y-max辅助线
+                var yline2 = document.createElement('div');
+                yline2['id'] = 'sup-yline2';
+                yline2.style.left = this.currentStyle ? this.currentStyle["left"] : getComputedStyle(this, null)["left"];
+                yline2.style.top = this.currentStyle ? this.currentStyle["top"] : getComputedStyle(this, null)["top"];
+                document.body.appendChild(yline2);
+                // 实际拖拽体的中心
+                disX = oTemp.offsetWidth / 2;
+                disY = oTemp.offsetHeight / 2;
+                // 鼠标移动
+                document.onmousemove = function (event) {
+                    var event = event || window.event;
+                    iL = event.clientX - disX;
+                    iT = event.clientY - disY;
+                    var maxL = document.documentElement.clientWidth - oTemp.offsetWidth;
+                    var maxT = document.documentElement.clientHeight - oTemp.offsetHeight;
+                    var oTempWidth = oTemp.offsetWidth;
+                    var oTempHeight = oTemp.offsetHeight;
+                    // 限制在当前浏览器窗口内拖动
+                    iL <= 0 && (iL = 0);
+                    iT <= 0 && (iT = 0);
+                    iL >= maxL && (iL = maxL);
+                    iT >= maxT && (iT = maxT);
+                    if(oTemp.classList.contains('machine-zone')==true){
+                        xline2.style.top = iT + oTempHeight - 50 + "px";
+                    }else{
+                        xline2.style.top = iT + oTempHeight + "px";
+                    }
+                    // 实际拖拽体的位置
+                    oTemp.style.left = iL + "px";
+                    oTemp.style.top = iT + "px";
+                    // x-min辅助线的位置
+                    xline1.style.left = 0;
+                    xline1.style.top = iT + "px";
+                    // x-max辅助线的位置
+                    xline2.style.left = 0;
+                    // y-min辅助线的位置          
+                    yline1.style.left = iL + "px";
+                    yline1.style.top = 0;
+                    // y-max辅助线的位置          
+                    yline2.style.left = iL + oTempWidth + "px";
+                    yline2.style.top = 0;
+                    return false;
+                };
+                // 鼠标抬起
+                document.onmouseup = function (event) {
+                    document.onmousemove = null;
+                    document.onmouseup = null;
+                    // 移除辅助线
+                    document.body.removeChild(xline1);
+                    document.body.removeChild(xline2);
+                    document.body.removeChild(yline1);
+                    document.body.removeChild(yline2);
+                    var event = event || window.event;
+                    // 拖拽体
+                    var width;
+                    var height;
+                    // 拖拽体与浏览器窗口距离
+                    var left;
+                    var top;
+                    // 拖拽范围
+                    var xMin;
+                    var xMax;
+                    var yMin;
+                    var yMax;
+                    // 父级容器
+                    var zone;
+                    // 机箱和空调移入到电气室中
+                    if (oTemp.getAttribute('type') == 'outer') {
+                        // 电气室宽度
+                        zone = document.getElementById('love-house');
+                        width = zone.offsetWidth;
+                        // 电气室高度
+                        height = zone.offsetHeight;
+                        // 获取电气室到浏览器的距离
+                        left = zone.getBoundingClientRect().left;
+                        top = zone.getBoundingClientRect().top;
+                        xMin = left + disX;
+                        yMin = top + disY;
+                        xMax = left + width - disX;
+                        yMax = top + height - disY;
+                        if ((event.clientX < xMin) || (event.clientX > xMax) || (event.clientY < yMin) || (event.clientY > yMax)) {
+                            document.body.removeChild(oTemp);
+                        }
+                        dragD(oTemp,ontology);
+                    }
+                    // 温感、烟感、控制器移入到机箱顶部
+                    else if (oTemp.getAttribute('type') == 'inner') {
+                        zone = document.getElementsByClassName('machine-zone');
+                        var arr = [];
+                        for (var i = 0; i < zone.length; i++) {
+                            width = zone[i].offsetWidth;
+                            height = zone[i].offsetHeight;
+                            left = zone[i].offsetLeft;
+                            top = zone[i].offsetTop;
+                            xMin = left + disX + 15;
+                            xMax = left + width - disX - 15;
+                            yMin = top + disY + 5;
+                            yMax = top + height - disY - 5;
+                            if ((event.clientX < xMin) || (event.clientX > xMax) || (event.clientY < yMin) || (event.clientY > yMax)) {
+                                arr.push(0);
+                            } else {
+                                arr.push(1);
+                            }
+                            
+                        }
+                        // 数组中不存在1，表示未能移入机柜顶部有效范围
+                        if (arr.indexOf(1) == '-1') {
+                            document.body.removeChild(oTemp);
+                        }            
+                        dragD(oTemp,ontology);
+                    }
+                    if (oDrag.children[0].getAttribute('id') == 'drag-machine') {
+                        rotate.style.transform = "rotateX(0deg)";
+                        rotate.src = './img/machine.png';
+                        rotate.style.width = 83 + 'px';
+                        rotate.style.height = 147 + 'px';
+                        rotate.style.marginTop = 14 + 'px';
+                    } else if (oDrag.children[0].getAttribute('id') == 'drag-air') {
+                        rotate.style.transform = "rotateX(0deg)";
+                        rotate.src = './img/air.png';
+                        rotate.style.width = 83 + 'px';
+                        rotate.style.height = 147 + 'px';
+                        rotate.style.marginTop = 14 + 'px';
+                    }
+                    // 拖拽本体
+                    // oDrag.style.left = oTemp.style.left;
+                    // oDrag.style.top = oTemp.style.top;
+                    // oDrag.style.zIndex = oTemp.style.zIndex;
+                    // document.body.removeChild(oTemp);
+                    // oDrag.releaseCapture && oDrag.releaseCapture()
+                };
+                this.setCapture && this.setCapture();
+                return false
+            }
+        }
+        var panel = document.getElementById('fixed-panel');
+        // 拖拽删除
+        function dragD (oTemp,ontology) {
+            var disX =0;
+            var disY = 0;
+            var iL = 0;
+            var iT = 0;
+            var x1;
+            var y1;
+            var x2;
+            var y2;
+            // 判断点击事件和拖拽事件的标识符
+            var flag = '';
+            oTemp.onmousedown = function (event) {
+                flag = true;
+                var event = event || window.event;
+                disX = oTemp.offsetWidth / 2;
+                disY = oTemp.offsetHeight / 2;
+                x1 = event.clientX;
+                y1 = event.clientY;
+                // 创建x-min辅助线
+                var xline1 = document.createElement('div');
+                xline1['id'] = 'sup-xline1';
+                document.body.appendChild(xline1);
+                // 创建x-max辅助线
+                var xline2 = document.createElement('div');
+                xline2['id'] = 'sup-xline2';
+                document.body.appendChild(xline2);
+                // 创建y-min辅助线
+                var yline1 = document.createElement('div');
+                yline1['id'] = 'sup-yline1';
+                document.body.appendChild(yline1);
+                // 创建y-max辅助线
+                var yline2 = document.createElement('div');
+                yline2['id'] = 'sup-yline2';
+                document.body.appendChild(yline2);
+                
+                document.onmousemove = function (event) {
+                    var event = event || window.event;
+                    iL = event.clientX - disX;
+                    iT = event.clientY - disY;
+                    // 实际拖拽体的位置
+                    x2 = event.clientX;
+                    y2 = event.clientY;
+                    var oTempWidth = oTemp.offsetWidth;
+                    var oTempHeight = oTemp.offsetHeight;
+                    // 判断点击的位置是否相同
+                    if(x1!=x2 && y1!=y2){
+                        flag = false;
+                        if(oTemp.classList.contains('machine-zone')==true){
+                            xline2.style.top = iT + oTempHeight - 50 + "px";
+                        }else{
+                            xline2.style.top = iT + oTempHeight + "px";
+                        }
+                        oTemp.style.left = iL+"px";
+                        oTemp.style.top = iT+"px";
+                        // x-min辅助线的位置
+                        xline1.style.left = 0;
+                        xline1.style.top = iT + "px";
+                        // x-max辅助线的位置
+                        xline2.style.left = 0;
+                        // y-min辅助线的位置          
+                        yline1.style.left = iL + "px";
+                        yline1.style.top = 0;
+                        // y-max辅助线的位置          
+                        yline2.style.left = iL + oTempWidth + "px";
+                        yline2.style.top = 0;
+                    }
+                    return false;
+                }
+                document.onmouseup = function (event) {
+                    var event = event || window.event;
+                    document.onmousemove = null;
+                    document.onmouseup = null;
+                    // 移除辅助线
+                    document.body.removeChild(xline1);
+                    document.body.removeChild(xline2);
+                    document.body.removeChild(yline1);
+                    document.body.removeChild(yline2);
+                    // 去除选中效果
+                    var machineZone = document.getElementsByClassName('machine');
+                    for(var i=0;i<machineZone.length;i++){
+                        machineZone[i].style.borderTop = 'none';
+                        machineZone[i].style.borderBottom = 'none';
+                        machineZone[i].style.borderLeft = '5px solid #666666';
+                        machineZone[i].style.borderRight = '5px solid #666666';
+                        machineZone[i].style.background = 'none';
+                    }
+                    var imgZone = document.getElementsByClassName('img-zone');
+                    for(var i=0;i<imgZone.length;i++){
+                        imgZone[i].style.border = 'none';
+                        imgZone[i].style.background = 'none';
+                    }
+                    // 判断为点击事件非拖拽事件
+                    if(flag == true){
+                        // 面板标题修改
+                        var panelTitle = document.getElementById('panel-title');
+                        oTemp.classList.contains('machine-line') && (panelTitle.innerText = '机柜信息');
+                        oTemp.classList.contains('air-line') && (panelTitle.innerText = '空调信息');
+                        oTemp.classList.contains('smoke-line') && (panelTitle.innerText = '烟感信息');
+                        oTemp.classList.contains('temperature-line') && (panelTitle.innerText = '温感信息');
+                        oTemp.classList.contains('control-line') && (panelTitle.innerText = '控制器信息'); 
+                        window.ontology = oTemp;
+                        var input = document.getElementById('machineName');
+                        var axisX = document.getElementById('machineAxis-x');
+                        var axisY = document.getElementById('machineAxis-y');
+                        if(oTemp.classList.contains('machine-zone')==true){
+                            oTemp.children[0].style.borderTop = '1px solid #1B86FF';
+                            oTemp.children[0].style.borderBottom = '1px solid #1B86FF';
+                            oTemp.children[0].style.borderLeft = '5px solid #1B86FF';
+                            oTemp.children[0].style.borderRight = '5px solid #1B86FF';
+                            oTemp.children[0].style.background = '#01234A';
+                        }else{
+                            oTemp.style.border = '1px solid #1B86FF';
+                            oTemp.style.background = '#01234A';
+                        }
+                        // 获取当前拖拽体的页面坐标与名称
+                        axisX.value=(oTemp.offsetWidth/2)+oTemp.offsetLeft-390;
+                        axisY.value=(oTemp.offsetHeight/2)+oTemp.offsetTop-190;
+                        input.value=oTemp.getAttribute('name');
+                        // 面板显示
+                        panel.style.display = 'block';
+                    }else{
+                        // 拖拽体
+                        var width;
+                        var height;
+                        // 拖拽体与浏览器窗口距离
+                        var left;
+                        var top;
+                        // 拖拽范围
+                        var xMin;
+                        var xMax;
+                        var yMin;
+                        var yMax;
+                        // 父级容器
+                        var zone;
+                        // 电气室宽度
+                        zone = document.getElementById('love-house');
+                        width = zone.offsetWidth;
+                        // 电气室高度
+                        height = zone.offsetHeight;
+                        // 获取电气室到浏览器的距离
+                        left = zone.getBoundingClientRect().left;
+                        top = zone.getBoundingClientRect().top;
+                        xMin = left + disX;
+                        yMin = top + disY;
+                        xMax = left + width - disX;
+                        yMax = top + height - disY;
+                        // 拖拽删除
+                        if ((event.clientX < xMin) || (event.clientX > xMax) || (event.clientY < yMin) || (event.clientY > yMax)) {
+                            document.body.removeChild(oTemp);
+                            panel.style.display = 'none';
+                        }
+                    }
+                }
+            }
+            this.setCapture && this.setCapture();
+            return false;
+        }
+        // 点击画板，面板隐藏
+        var painting = document.getElementById('painting');
+        painting.addEventListener('click',function(){
+            // 去选中效果
+            var machineZone = document.getElementsByClassName('machine');
+            for(var i=0;i<machineZone.length;i++){
+                machineZone[i].style.borderTop = 'none';
+                machineZone[i].style.borderBottom = 'none';
+                machineZone[i].style.borderLeft = '5px solid #666666';
+                machineZone[i].style.borderRight = '5px solid #666666';
+                machineZone[i].style.background = 'none';
+            }
+            var imgZone = document.getElementsByClassName('img-zone');
+            for(var i=0;i<imgZone.length;i++){
+                imgZone[i].style.border = 'none';
+                imgZone[i].style.background = 'none';
+            }
+            // 面板隐藏
+            panel.style.display = 'none';
+        })
+        // 面板-确认按钮
+        var panelBtn = document.getElementById('item-btn');
+        panelBtn.addEventListener('click',function(){
+            var input = document.getElementById('machineName');
+            var axisX = document.getElementById('machineAxis-x');
+            var axisY = document.getElementById('machineAxis-y');
+            var zone = document.getElementById('love-house');
+            var input = document.getElementById('machineName');
+            // x轴距离浏览器窗口顶部的位置
+            var xTop = zone.getBoundingClientRect().top + zone.offsetHeight / 2;
+            // y轴距离浏览器窗口左部的位置
+            var yLeft = zone.getBoundingClientRect().left + zone.offsetWidth / 2;
+            // 真实坐标
+            var axis;
+            // 根据输入的x、y坐标改变当前模块的位置
+            var x = (axisX.value - (ontology.offsetWidth/2)+ 390) + "px";
+            var y = (axisY.value - (ontology.offsetHeight/2)+ 190) + "px";
+            ontology.style.left = x;
+            ontology.style.top = y;   
+            // 真实坐标
+            if(ontology.classList.contains('machine-zone')==true){
+                var x = (ontology.offsetLeft + ontology.offsetWidth / 2) - yLeft;
+                var y = 0;
+                var z = (ontology.offsetTop + ontology.offsetHeight - 50) - xTop;    
+                axis = "(" + x +","+ y + "," + z + ")";
+                ontology.children[1].children[0].innerText = input.value;
+            }else if(ontology.classList.contains('img-zone')==true){
+                var x = (ontology.offsetLeft + ontology.offsetWidth / 2) - yLeft;
+                var y = 220;
+                var z = (ontology.offsetTop + ontology.offsetHeight / 2) - xTop;
+                axis = "(" + x +","+ y + "," + z + ")";
+            }
+            ontology.setAttribute('name',input.value);
+            ontology.setAttribute('axis',axis); 
+            // 去除选中效果
+            var machineZone = document.getElementsByClassName('machine');
+            for(var i=0;i<machineZone.length;i++){
+                machineZone[i].style.borderTop = 'none';
+                machineZone[i].style.borderBottom = 'none';
+                machineZone[i].style.borderLeft = '5px solid #666666';
+                machineZone[i].style.borderRight = '5px solid #666666';
+                machineZone[i].style.background = 'none';
+            }
+            var imgZone = document.getElementsByClassName('img-zone');
+            for(var i=0;i<imgZone.length;i++){
+                imgZone[i].style.border = 'none';
+                imgZone[i].style.background = 'none';
+            } 
+            // 面板隐藏
+            panel.style.display = 'none';                                                                                                                                                              
+        })
+
+        var zone;
+        // 机箱位置
+        var machinePositionArr = [];
+        var airPositionArr = [];
+        var smokePositionArr = [];
+        var temperaturePositionArr = [];
+        var controllerPositionArr = [];
+        var fontPositionArr = [];
+        var describArr = [];
+        var machineNamePositionArr = [];
+        var airNamePositionArr = [];
+        var machineNameArr = [];
+        var airNameArr = [];
+
+        // 获取坐标数据
+        function data(machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, fontPositionArr, describArr,machineNameArr,machineNamePositionArr,airNameArr,airNamePositionArr) {
+            zone = document.getElementById('love-house');
+            // x轴距离浏览器窗口顶部的位置
+            var xTop = zone.getBoundingClientRect().top + zone.offsetHeight / 2;
+            // y轴距离浏览器窗口左部的位置
+            var yLeft = zone.getBoundingClientRect().left + zone.offsetWidth / 2;
+            // 获取拖拽体
+            var machineLine = document.getElementsByClassName('machine-line');
+            var airLine = document.getElementsByClassName('air-line');
+            var smokeLine = document.getElementsByClassName('smoke-line');
+            var temperatureLine = document.getElementsByClassName('temperature-line');
+            var controllerLine = document.getElementsByClassName('control-line');
+            var describLine = document.getElementsByClassName('machine-title-input');
+            // var machineNameLine = document.get
+            // 机柜名称坐标根据机柜坐标计算
+            var equipLine = document.getElementsByClassName('machine-zone');
+            for (var i = 0; i < describLine.length; i++) {
+                describArr.push(describLine[i].innerText);
+            }
+            for (var i = 0; i < machineLine.length; i++) {
+                machineNameArr.push(machineLine[i].children[1].children[0].value);
+            }
+            for (var i = 0; i < airLine.length; i++) {
+                airNameArr.push(airLine[i].children[1].children[0].value);
+            }
+            font(equipLine, fontPositionArr);
+            equip(machineLine, machinePositionArr);
+            equip(airLine, airPositionArr);
+            coordinate(smokeLine, smokePositionArr);
+            coordinate(temperatureLine, temperaturePositionArr);
+            coordinate(controllerLine, controllerPositionArr);
+            font(machineLine,machineNamePositionArr)
+            font(airLine,airNamePositionArr)
+            // 机柜名称坐标
+            function font(obj, positonArr) {
+                for (var i = 0; i < obj.length; i++) {
+                    var arr = [];
+                    var x = obj[i].offsetLeft + 10 - yLeft;
+                    var y = 280;
+                    var z = obj[i].offsetTop + obj[i].offsetHeight - 45 - xTop;
+                    arr.push(x, y, z);
+                    positonArr.push(arr);
+                }
+            }
+            // 烟感、温感、控制器坐标
+            function coordinate(obj, positonArr) {
+                for (var i = 0; i < obj.length; i++) {
+                    var arr = [];
+                    var x = (obj[i].offsetLeft + obj[i].offsetWidth / 2) - yLeft;
+                    var y = 220;
+                    var z = (obj[i].offsetTop + obj[i].offsetHeight / 2) - xTop;
+                    arr.push(x, y, z);
+                    positonArr.push(arr);
+                }
+            }
+            // 机柜与空调坐标
+            function equip(obj, positonArr) {
+                for (var i = 0; i < obj.length; i++) {
+                    var arr = [];
+                    var x = (obj[i].offsetLeft + obj[i].offsetWidth / 2) - yLeft;
+                    var y = 0;
+                    var z = (obj[i].offsetTop + obj[i].offsetHeight - 50) - xTop;
+                    arr.push(x, y, z);
+                    positonArr.push(arr);
+                }
+            }
+        }
+
+        // tab页切换
+        var tab1Btn = document.getElementById('tab1-button');
+        var tab2Btn = document.getElementById('tab2-button');
+        var flat = document.getElementById('flat');
+        var three = document.getElementById('three-dimensional');
+        // 平面视图切换
+        tab1Btn.addEventListener('click', function () {
+            // 显示与隐藏
+            tab1Btn.classList.remove('tab1-style');
+            tab1Btn.classList.add('tab2-style');
+            tab2Btn.classList.remove('tab2-style');
+            flat.style.display = 'block';
+            three.style.display = 'none';
+            // 清空canvas
+            three.innerHTML = '';
+        })
+        // 3D视图切换
+        tab2Btn.addEventListener('click', function () {
+            panel.style.display = 'none';  
+            tab2Btn.classList.remove('tab1-style');
+            tab2Btn.classList.add('tab2-style');
+            tab1Btn.classList.remove('tab2-style');
+            data(machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, fontPositionArr, describArr,machineNameArr,machineNamePositionArr,airNameArr,airNamePositionArr);
+            threeRoom(gridWidth, gridLength, machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, describArr);
+            // 数据清空
+            machinePositionArr = [];
+            airPositionArr = [];
+            smokePositionArr = [];
+            temperaturePositionArr = [];
+            controllerPositionArr = [];
+            fontPositionArr = [];
+            describArr = [];
+            // 显示与隐藏
+            flat.style.display = 'none';
+            three.style.display = 'block';
+        })
+        
+        // // 提交数据
+        // var submitBtn = document.getElementById('submit-button');
+        // // 设备信息
+        // var equip = '';
+        // // 组件信息
+        // var model = '';
+        // submitBtn.addEventListener('click', function () {
+        //     // 获取坐标数据
+        //     data(machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, fontPositionArr, describArr,machineNameArr,machineNamePositionArr,airNameArr,airNamePositionArr);
+ 
+        //     for(i = 0; i < machinePositionArr.length; i++) {
+        //         var a = machinePositionArr[i];
+        //         var b = machineNamePositionArr[i];
+        //         var c =  machineNameArr[i];
+        //         a == '' && (a = null);
+        //         b == '' && (b = null);
+        //         c == '' && (c = null);
+        //         equip += "["+ a + "]" + "-"+ "[" + b + "]" + "-" + c  + "-" +  "0" + "~";
+        //     }
+        //     for(i = 0; i < airPositionArr.length; i++) {
+        //         var a = airPositionArr[i];
+        //         var b = airNamePositionArr[i];
+        //         var c =  airNameArr[i];
+        //         a == '' && (a = null);
+        //         b == '' && (b = null);
+        //         c == '' && (c = null);
+        //         equip += "["+ a + "]" + "-"+ "[" + b + "]" + "-" + c  + "-" +  "1" + "~";
+        //     } 
+        //     for(i = 0; i < smokePositionArr.length; i++) {
+        //         var a = smokePositionArr[i];
+        //         a == '' && (a = null);
+        //         model += "smoke:"+"["+ a + "]" + "~";
+        //     }     
+        //     for(i = 0; i < temperaturePositionArr.length; i++) {
+        //         var a = temperaturePositionArr[i];
+        //         a == '' && (a = null);
+        //         model += "temperature:"+"["+ a + "]" + "~";
+        //     }    
+        //     for(i = 0; i < controllerPositionArr.length; i++) {
+        //         var a = controllerPositionArr[i];
+        //         a == '' && (a = null);
+        //         model += "controller:"+"["+ a + "]" + "-"+ "[" + b + "]" + "-" + c  + "-" +  "c" + "~";
+        //     }            
+        //     // 去除末尾逗号
+        //     equip = equip.substr(0, equip.length - 1);
+        //     model = model.substr(0, model.length - 1);
+        //     //创建异步对象  
+        //     var xhr = new XMLHttpRequest();
+        //     //设置请求的类型及url
+        //     //post请求一定要添加请求头才行不然会报错
+        //     xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        //     xhr.open('post','');
+        //     //发送请求
+        //     xhr.send('equip&');
+        //     xhr.onreadystatechange = function () {
+        //         // 这步为判断服务器是否正确响应
+        //         if (xhr.readyState == 4 && xhr.status == 200) {
+        //             console.log(xhr.responseText);
+                    
+        //             _this.$router.push('/manager/safe/fdisk');
+        //         } 
+        //     };
+        // })
+
+        // 3D电气室
+        function threeRoom(gridWidth, gridLength, machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, describArr,machineNameArr,machineNamePositionArr,airNameArr,airNamePositionArr) {
+            var scene, camera
+            var renderer
+            var width, height
+            // var stats
+            var config = {
+                isMobile: false,
+                background: 0x39609b
+            }
+            // canvas的长宽
+            width = window.innerWidth
+            height = window.innerHeight
+
+            scene = new THREE.Scene() // 新建一个场景
+            camera = new THREE.PerspectiveCamera(45, width / height, 1, 5000) // 新建一个透视摄像机, 并设置 视场, 视野长宽比例, 可见远近范围
+            // 摄像机的位置
+            camera.position.set(0, 1000, 1000)
+            camera.lookAt(scene.position) // 设置摄像机观察的方向
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            }) // 新建一个渲染器, 渲染器用来输出最终结果
+            renderer.setSize(width, height) // 设置渲染的尺寸, 在这里是浏览器尺寸
+            renderer.setClearColor(config.background) // 设置背景的颜色
+            renderer.shadowMap.enabled = true // 设置是否开启投影, 开启的话, 光照会产生投影
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap // 设置投影类型, 这边是柔和投影
+            document.getElementById('three-dimensional').appendChild(renderer.domElement);// renderer.domElement 是渲染器用来显示结果的 canvas 标签
+
+            // 检查客户端
+            checkUserAgent()
+            // 设置辅助线 以及鼠标插件
+            buildAuxSystem()
+            // 设置光照
+            buildLightSystem()
+            // 构造建筑物
+            buildbuilding(gridWidth, gridLength, machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, describArr)
+            // 加载
+            loop()
+            // 窗口自适应
+            onWindowResize()
+
+            function checkUserAgent() {
+                var n = navigator.userAgent;
+                if (n.match(/Android/i) || n.match(/webOS/i) || n.match(/iPhone/i) || n.match(/iPad/i) || n.match(/iPod/i) || n.match(/BlackBerry/i)) {
+                    config.isMobile = true
+                    camera.position.set(420, 420, 420)
+                    renderer.shadowMap.enabled = false
+                }
+            }
+
+            function buildbuilding(gridWidth, gridLength, machinePositionArr, airPositionArr, smokePositionArr, temperaturePositionArr, controllerPositionArr, describArr) {
+                // 创建底座 长/宽/高
+                var planeGeometry = new THREE.BoxBufferGeometry(gridWidth, 10, gridLength)
+                // 设置材质
+                var texturePlane = new THREE.TextureLoader().load("./img/floor.jpg");
+                texturePlane.wrapS = THREE.RepeatWrapping;
+                texturePlane.wrapT = THREE.RepeatWrapping;
+                texturePlane.repeat.set(8, 8);
+                var materialPlane = new THREE.MeshLambertMaterial({
+                    map: texturePlane,
+                    color: 0xC6E2FF
+                });
+                var plane = new THREE.Mesh(planeGeometry, materialPlane);
+                plane.rotation.z = -Math.PI
+                plane.position.y = -1
+                // 添加地板
+                scene.add(plane)
+                // 机柜名称
+                fontModel(fontPositionArr, describArr)
+                room(gridWidth,gridLength)
+                // 机柜
+                machine(machinePositionArr)
+                // 空调
+                air(airPositionArr)
+                // 烟感
+                smoke(smokePositionArr)
+                // 温感
+                temperature(temperaturePositionArr)
+                // 控制器
+                controller(controllerPositionArr)
+
+                // 创建3D文字
+                function fontModel(fontPositionArr, describArr) {
+                    var fontModel
+                    var font
+                    var loader = new THREE.FontLoader()
+                    var fontPosition = fontPositionArr
+                    var fontarray = describArr
+                    loader.load("./font/MicrosoftYaHei_Regular.json", function (res) {
+                        for (var i = 0; i < fontPosition.length; i++) {
+                            font = new THREE.TextBufferGeometry(fontarray[i], {
+                                font: res,
+                                size: 11,
+                                height: 1
+                            })
+                            font.computeBoundingBox() // 运行以后设置font的boundingBox属性对象，如果不运行无法获得。
+                            var material = new THREE.MeshLambertMaterial({})
+                            fontModel = new THREE.Mesh(font, material)
+                            //设置位置  
+                            var fontClone = fontModel.clone()
+                            fontClone.position.set(fontPosition[i][0], fontPosition[i][1], fontPosition[i][2])
+                            scene.add(fontClone)
+                        }
+                    })
+                }
+
+                // 房间主结构
+                function room(gridWidth,gridLength) {
+                    // 墙
+                    var w = gridWidth
+                    var l = gridLength
+                    var wall1 = new THREE.Object3D()
+
+                    var wallBottomGeometry = new THREE.BoxGeometry(20,90, l)
+                    var wallBottom = utils.makeMesh('phong', wallBottomGeometry, 0xC6E2FF)
+                    wallBottom.position.set(0, 45, 0)
+                    wall1.add(wallBottom)
+                    var holeGeometry = new THREE.BoxGeometry(4,200, l-10)
+                    var hole = utils.makeMesh('glass', holeGeometry, 0x00BFFF,0.6)
+                    hole.position.set(0, 145, 0)
+                    wall1.add(hole)
+                    var wallTopGeometry = new THREE.BoxGeometry(20,30, l)
+                    var wallTop = utils.makeMesh('phong', wallTopGeometry, 0xC6E2FF)
+                    wallTop.position.set(0,240,0)
+                    wall1.add(wallTop)
+                    wall1.position.set((-w/2)+10,0 ,0)
+                    scene.add(wall1)
+                    
+                    var wall2 = wall1.clone()
+                    wall2.position.set((w/2)-10,0 ,0)
+                    scene.add(wall2)
+                }
+
+                // 烟感
+                function smoke(smokePositionArr) {
+                    var smokePosition = smokePositionArr
+                    for (var i = 0; i < smokePosition.length; i++) {
+                        var smoke = createSmoke(smokePosition[i][0], smokePosition[i][1], smokePosition[i][2])
+                        scene.add(smoke)
+                    }
+                }
+
+                // 烟感模型
+                function createSmoke(x, y, z) {
+                    var smoke = new THREE.Object3D()
+                    var smokeBaseGeometry = new THREE.CylinderGeometry(20, 20, 10, 40, 5)
+                    var smokeBase = utils.makeMesh('lambert', smokeBaseGeometry, 0xE8E8E8)
+                    smokeBase.position.set(0, 96, 0)
+                    smoke.add(smokeBase)
+
+                    var smokeUpGeometry = new THREE.CylinderGeometry(16, 16, 4, 40, 5)
+                    var smokeUp = utils.makeMesh('glass', smokeUpGeometry, 0x008B00, 0.4)
+                    /* smokeUp.rotation.x = 0.5*Math.PI */
+                    smokeUp.position.set(0, 102, 0)
+                    smoke.add(smokeUp)
+
+                    var smokeCoverGeometry = new THREE.CylinderGeometry(8, 10, 5, 40, 5)
+                    var smokeCover = utils.makeMesh('lambert', smokeCoverGeometry, 0xE8E8E8)
+                    /* smokeUp.rotation.x = 0.5*Math.PI */
+                    smokeCover.position.set(0, 106, 0)
+                    smoke.add(smokeCover)
+                    smoke.position.set(x, y, z)
+
+                    return smoke
+                }
+
+                // 温感
+                function temperature(temperatureArr) {
+                    var temperaturePosition = temperatureArr
+                    for (var i = 0; i < temperaturePosition.length; i++) {
+                        var temperature = createTemperature(temperaturePosition[i][0], temperaturePosition[i][1], temperaturePosition[i][2])
+                        scene.add(temperature)
+                    }
+                }
+
+                // 温感模型
+                function createTemperature(x, y, z) {
+                    var temperature = new THREE.Object3D()
+                    // var temperatureBaseGeometry = new THREE.CylinderGeometry(5,8,1,40,40)
+                    // var temperatureBase = utils.makeMesh('phong',temperatureBaseGeometry,0xE8E8E8)
+                    // temperatureBase.position.set(-104,96,-50)
+                    // temperature.add(temperatureBase)
+
+                    var temperaturePillarGeometry = new THREE.CylinderGeometry(20, 20, 10, 40, 40)
+                    var temperaturePillar = utils.makeMesh('phong', temperaturePillarGeometry, 0xE8E8E8)
+                    temperaturePillar.position.set(0, 96, 0)
+                    temperature.add(temperaturePillar)
+
+                    var temperatureUpGeometry = new THREE.CylinderGeometry(20, 20, 8, 40, 5)
+                    var temperatureUp = utils.makeMesh('glass', temperatureUpGeometry, 0x000080, 0.8)
+                    /* smokeUp.rotation.x = 0.5*Math.PI */
+                    temperatureUp.position.set(0, 107, 0)
+                    temperature.add(temperatureUp)
+
+                    var temperatureCoverGeometry = new THREE.SphereGeometry(20, 20, 6, 0, Math.PI * 2, 0, Math.PI / 2)
+                    var temperatureCover = utils.makeMesh('phong', temperatureCoverGeometry, 0xE8E8E8)
+                    temperatureCover.position.set(0, 110, 0)
+                    temperature.add(temperatureCover)
+                    temperature.position.set(x, y, z)
+
+                    return temperature
+                }
+
+                // 控制器
+                function controller(controllerPositionArr) {
+                    var controllerPosition = controllerPositionArr
+                    for (var i = 0; i < controllerPosition.length; i++) {
+                        var controller = createController(controllerPosition[i][0], controllerPosition[i][1], controllerPosition[i][2])
+                        scene.add(controller)
+                    }
+                }
+
+                // 控制器模型
+                function createController(x, y, z) {
+                    var controller = new THREE.Object3D()
+
+                    var controllerBaseGeometry = new THREE.BoxGeometry(40, 30, 40)
+                    var controllerBase = utils.makeMesh('phong', controllerBaseGeometry, 0xE8E8E8)
+                    controllerBase.position.set(0, 103, 0)
+                    controller.add(controllerBase)
+
+                    var controllerLeftBarGeometry = new THREE.BoxGeometry(9, 26, 43)
+                    var controllerLeftBar = utils.makeMesh('glass', controllerLeftBarGeometry, 0x848484, 0.9)
+                    controllerLeftBar.position.set(-20, 96, 0)
+                    controller.add(controllerLeftBar)
+                    var controllerRightBar = controllerLeftBar.clone()
+                    controllerRightBar.position.set(20, 96, 0)
+                    controller.add(controllerRightBar)
+
+                    var lampGeometry = new THREE.CircleGeometry(1.4, 36, 0, Math.PI * 2)
+                    var lampGreen = utils.makeMesh('glass', lampGeometry, 0x00EE00, 0.9)
+                    lampGreen.position.set(-10, 107, 20)
+                    controller.add(lampGreen)
+                    var lampYellow = utils.makeMesh('glass', lampGeometry, 0xEEEE00, 0.9)
+                    lampYellow.position.set(-5, 107, 20)
+                    controller.add(lampYellow)
+                    var lampRed = utils.makeMesh('glass', lampGeometry, 0xEE0000, 0.9)
+                    lampRed.position.set(0, 107, 20)
+                    controller.add(lampRed)
+
+                    var controllerButtonGeometry = new THREE.BoxGeometry(10, 6, 0.5)
+                    var controllerButton = utils.makeMesh('phong', controllerButtonGeometry, 0x4A708B)
+                    controllerButton.castShadow = false
+                    controllerButton.position.set(-3, 98, 20)
+                    controller.add(controllerButton)
+
+                    var controllerButtonClone = controllerButton.clone()
+                    controllerButtonClone.position.set(9, 98, 20)
+                    controller.add(controllerButtonClone)
+
+                    controller.position.set(x, y, z)
+                    return controller
+                }
+
+                // 机柜
+                function machine(machinePositionArr) {
+                    var machine = new THREE.Object3D()
+                    var machinePosition = machinePositionArr
+
+                    var textureFront = new THREE.TextureLoader().load("./img/rack_front_door.jpg");
+                    var materialFront = new THREE.MeshPhongMaterial({
+                        map: textureFront
+                    });
+                    var machineFrontGeometry = new THREE.BoxGeometry(2, 300, 150)
+                    var machineFront = new THREE.Mesh(machineFrontGeometry, materialFront);
+                    machineFront.rotation.y = -0.5 * Math.PI
+                    machineFront.position.set(0, 152, 0)
+                    machine.add(machineFront)
+
+                    var textureBack = new THREE.TextureLoader().load("./img/rack_door_back.jpg");
+                    var materialBack = new THREE.MeshPhongMaterial({
+                        map: textureBack
+                    });
+                    var machineBackGeometry = new THREE.BoxGeometry(2, 300, 150)
+                    var machineBack = new THREE.Mesh(machineBackGeometry, materialBack);
+                    machineBack.rotation.y = -0.5 * Math.PI
+                    machineBack.position.set(0, 152, -140)
+                    machine.add(machineBack)
+
+                    var textureLeft = new THREE.TextureLoader().load("./img/rack_panel.jpg");
+                    var materialLeft = new THREE.MeshPhongMaterial({
+                        map: textureLeft,
+                        color: 0x383838
+                    });
+                    var machineLeftGeometry = new THREE.BoxGeometry(2, 300, 140)
+                    var machineLeft = new THREE.Mesh(machineLeftGeometry, materialLeft);
+                    machineLeft.position.set(-75, 152, -70)
+                    machine.add(machineLeft)
+
+                    var machineRight = machineLeft.clone()
+                    machineRight.position.set(75, 152, -70)
+                    machine.add(machineRight)
+
+                    var textureBottom = new THREE.TextureLoader().load("./img/rack_panel.jpg");
+                    var materialBottom = new THREE.MeshPhongMaterial({
+                        map: textureBottom,
+                        color: 0x383838
+                    });
+                    var machineBottomGeometry = new THREE.BoxGeometry(150, 2, 140)
+                    var machineBottom = new THREE.Mesh(machineBottomGeometry, materialBottom);
+                    machineBottom.position.set(0, 2, -70)
+                    machine.add(machineBottom)
+
+                    var textureTop = new THREE.TextureLoader().load("./img/rack_panel.jpg");
+                    var materialTop = new THREE.MeshPhongMaterial({
+                        map: textureTop,
+                        color: 0x383838
+                    });
+                    var machineTopGeometry = new THREE.BoxGeometry(140, 40, 150)
+                    var machineTop = new THREE.Mesh(machineTopGeometry, materialTop);
+                    machineTop.position.set(0, 290, -70)
+                    machine.add(machineTop)
+
+                    for (var i = 0; i < machinePosition.length; i++) {
+                        var machineClone = machine.clone()
+                        machineClone.position.set(machinePosition[i][0], machinePosition[i][1], machinePosition[i][2])
+                        scene.add(machineClone)
+                    }
+                }
+            }
+
+            // 空调
+            function air(airPositionArr) {
+                var air = new THREE.Object3D()
+                var airPosition = airPositionArr
+                var textureFront = new THREE.TextureLoader().load("./img/rack_inside.jpg");
+                var materialFront = new THREE.MeshBasicMaterial({
+                    map: textureFront,
+                    color: 0xFFFFFF
+                });
+                var machineFrontGeometry = new THREE.BoxGeometry(2, 300, 150)
+                var machineFront1 = new THREE.Mesh(machineFrontGeometry, materialFront);
+
+                var airHole1Geometry = new THREE.BoxGeometry(2, 60, 120)
+                var airHole1 = utils.makeMesh('phong', airHole1Geometry, 0x4A708B)
+
+                airHole1.position.y = 87
+
+                var airHole2Geometry = new THREE.BoxGeometry(2, 40, 35)
+                var airHole2 = utils.makeMesh('phong', airHole2Geometry, 0x4A708B)
+                airHole2.position.y = -118
+
+                var airHole3 = airHole2.clone()
+                airHole3.position.z = 45
+
+                var airHole4 = airHole2.clone()
+                airHole4.position.z = -45
+
+                var airHole1BSP = new ThreeBSP(airHole1)
+                var machineFront1BSP = new ThreeBSP(machineFront1)
+                var machineFront1ResultBSP = utils.bsp('subtract', machineFront1BSP, airHole1BSP)
+
+                var airHole2BSP = new ThreeBSP(airHole2)
+                var machineFront2ResultBSP = utils.bsp('subtract', machineFront1ResultBSP, airHole2BSP)
+
+                var airHole3BSP = new ThreeBSP(airHole3)
+                var machineFront3ResultBSP = utils.bsp('subtract', machineFront2ResultBSP, airHole3BSP)
+
+                var airHole4BSP = new ThreeBSP(airHole4)
+                var machineFront4ResultBSP = utils.bsp('subtract', machineFront3ResultBSP, airHole4BSP)
+                var machineFront = utils.bspMesh('phong', 0xEBEBEB, machineFront4ResultBSP)
+
+                var textureGrid = new THREE.TextureLoader().load("./img/flag.jpg");
+                var materialGrid = new THREE.MeshBasicMaterial({
+                    map: textureGrid,
+                    color: 0xFFFFFF
+                })
+                var textureGrid1 = new THREE.TextureLoader().load("./img/eee.png");
+                var materialGrid1 = new THREE.MeshBasicMaterial({
+                    map: textureGrid1,
+                    color: 0xFFFFFF
+                })
+                var airGrid1Geometry = new THREE.BoxGeometry(120, 60, 2)
+                var airGrid1 = new THREE.Mesh(airGrid1Geometry, materialGrid);
+                airGrid1.position.z = 0
+                airGrid1.position.y = 240
+                air.add(airGrid1)
+
+                var airGrid2Geometry = new THREE.BoxGeometry(35, 40, 2)
+                var airGrid2 = new THREE.Mesh(airGrid2Geometry, materialGrid1)
+                airGrid2.position.z = 0
+                airGrid2.position.y = 35
+                air.add(airGrid2)
+
+                var airGrid3 = airGrid2.clone()
+                airGrid3.position.x = 45
+                air.add(airGrid3)
+
+                var airGrid4 = airGrid2.clone()
+                airGrid4.position.x = -45
+                air.add(airGrid4)
+
+                var textureLock = new THREE.TextureLoader().load("./img/lock.png");
+                var materialLock = new THREE.MeshBasicMaterial({
+                    map: textureLock,
+                    color: 0xFFFFFF
+                })
+                var LockGeometry = new THREE.BoxGeometry(18, 24, 10)
+                var Lock = new THREE.Mesh(LockGeometry, materialLock)
+                Lock.position.y = 166
+                Lock.position.x = 0
+                air.add(Lock)
+
+                machineFront.rotation.y = -0.5 * Math.PI
+                machineFront.position.set(0, 152, 0)
+                air.add(machineFront)
+
+                var textureBack = new THREE.TextureLoader().load("./img/rack_inside.jpg");
+                var materialBack = new THREE.MeshPhongMaterial({
+                    map: textureBack,
+                    color: 0xFFFFFF
+                })
+                var machineBackGeometry = new THREE.BoxGeometry(2, 300, 150)
+                var machineBack = new THREE.Mesh(machineBackGeometry, materialBack);
+                machineBack.rotation.y = -0.5 * Math.PI
+                machineBack.position.set(0, 152, -140)
+                air.add(machineBack)
+
+                var textureLeft = new THREE.TextureLoader().load("./img/rack_inside.jpg");
+                var materialLeft = new THREE.MeshPhongMaterial({
+                    map: textureLeft,
+                    color: 0xFFFFFF
+                })
+                var machineLeftGeometry = new THREE.BoxGeometry(2, 300, 140)
+                var machineLeft = new THREE.Mesh(machineLeftGeometry, materialLeft);
+                machineLeft.position.set(-75, 152, -70)
+                air.add(machineLeft)
+
+                var machineRight = machineLeft.clone()
+                machineRight.position.set(75, 152, -70)
+                air.add(machineRight)
+
+                var textureBottom = new THREE.TextureLoader().load("./img/rack_inside.jpg");
+                var materialBottom = new THREE.MeshPhongMaterial({
+                    map: textureBottom,
+                    color: 0xFFFFFF
+                })
+                var machineBottomGeometry = new THREE.BoxGeometry(150, 2, 140)
+                var machineBottom = new THREE.Mesh(machineBottomGeometry, materialBottom);
+                machineBottom.position.set(0, 2, -70)
+                air.add(machineBottom)
+
+                var textureTop = new THREE.TextureLoader().load("./img/rack_inside.jpg");
+                var materialTop = new THREE.MeshPhongMaterial({
+                    map: textureTop,
+                    color: 0x63B8FF
+                })
+                var machineTopGeometry = new THREE.BoxGeometry(140, 40, 150)
+                var machineTop = new THREE.Mesh(machineTopGeometry, materialTop);
+                machineTop.position.set(0, 290, -70)
+                air.add(machineTop)
+
+                for (var i = 0; i < airPosition.length; i++) {
+                    var airClone = air.clone()
+                    airClone.position.set(airPosition[i][0], airPosition[i][1], airPosition[i][2])
+                    scene.add(airClone)
+                }
+            }
+
+            // 光
+            function buildLightSystem() {
+                if (!config.isMobile) {
+                    // 平行的一束光，模拟从很远处照射的太阳光
+                    // DirectionalLight( color, intensity )
+                    // color — 光的颜色值，十六进制，默认值为0xffffff.
+                    // intensity — 光的强度，默认值为1.  
+                    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                    directionalLight.position.set(500, 1000, 500);
+                    directionalLight.target.position.set(0, 0, 0);
+                    directionalLight.castShadow = false;
+
+                    var d = 300;
+                    // 正交投影相机
+                    // var camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+                    directionalLight.shadow.camera = new THREE.OrthographicCamera(-d, d, d, -d, 500, 1600);
+                    directionalLight.shadow.bias = 0.0001;
+                    directionalLight.shadow.mapSize.width = directionalLight.shadow.mapSize.height = 1024;
+                    scene.add(directionalLight)
+                    // 环境光( AmbientLight )：笼罩在整个空间无处不在的光
+                    var light = new THREE.AmbientLight(0xffffff, 0.3)
+                    scene.add(light)
+                } else {
+                    // 半球光光源( HemisphereLight )
+                    var hemisphereLight = new THREE.HemisphereLight(0xEBEBEB, 1)
+                    scene.add(hemisphereLight)
+                    var light = new THREE.AmbientLight(0xffffff, 0.15)
+                    scene.add(light)
+                }
+            }
+
+            function buildAuxSystem() {
+                // stats = new Stats()
+                // stats.setMode(0)
+                // stats.domElement.style.position = 'absolute'
+                // stats.domElement.style.left = '5px'
+                // stats.domElement.style.top = '5px'
+                // document.body.appendChild(stats.domElement)
+
+                // var axisHelper = new THREE.AxesHelper(200)
+                // scene.add(axisHelper)
+
+                // 创建网格辅助线
+                /* var gridHelper = new THREE.GridHelper(320, 32)
+                scene.add(gridHelper) */
+
+                var controls = new THREE.OrbitControls(camera, renderer.domElement)
+                //使动画循环使用时阻尼或自转 意思是否有惯性
+                controls.enableDamping = true
+                //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+                controls.dampingFactor = 0.25
+                //旋转速度
+                controls.rotateSpeed = 0.35
+            }
+
+            function loop() {
+                // stats.update()
+                renderer.render(scene, camera) // 渲染器开始渲染, scene 和 camera 是必须参数, 因为场景里有动画, 所以放在 loop 里循环
+                requestAnimationFrame(loop)
+            }
+
+            function onWindowResize(inxx) {
+                window.addEventListener('resize', function () {
+                    width = window.innerWidth
+                    height = window.innerHeight
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix()
+                    renderer.setSize(width, height)
+                })
+            }
+        }
+    </script>    
+</body>
+
+</html>
